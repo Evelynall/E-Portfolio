@@ -1,0 +1,7 @@
+[0612/091914.533:ERROR:gpu\ipc\client\command_buffer_proxy_impl.cc:285] ContextResult::kTransientFailure: Failed to send GpuControl.CreateCommandBuffer.
+[0612/092053.566:ERROR:gpu\ipc\client\command_buffer_proxy_impl.cc:285] ContextResult::kTransientFailure: Failed to send GpuControl.CreateCommandBuffer.
+[0612/092238.680:ERROR:gpu\ipc\client\command_buffer_proxy_impl.cc:285] ContextResult::kTransientFailure: Failed to send GpuControl.CreateCommandBuffer.
+[0612/092333.447:WARNING:media\filters\ffmpeg_demuxer.cc:1219] PipelineStatus::DEMUXER_ERROR_COULD_NOT_OPEN
+[0612/092333.457:WARNING:media\filters\ffmpeg_demuxer.cc:1219] PipelineStatus::DEMUXER_ERROR_COULD_NOT_OPEN
+[0612/092445.986:WARNING:media\filters\ffmpeg_demuxer.cc:1219] PipelineStatus::DEMUXER_ERROR_COULD_NOT_OPEN
+[0612/092446.003:WARNING:media\filters\ffmpeg_demuxer.cc:1219] PipelineStatus::DEMUXER_ERROR_COULD_NOT_OPEN

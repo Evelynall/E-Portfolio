@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Portfolio Admin — 作品管理</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  *,*::before,*::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #F8F6F3;
+    --bg-2: #EDE9E3;
+    --ink: #1A1715;
+    --ink-2: #5A5550;
+    --ink-3: #9A9590;
+    --accent: #C75B2C;
+    --accent-hover: #A84A20;
+    --success: #2D8A5F;
+    --danger: #C94A4A;
+    --border: rgba(26,23,21,.12);
+    --shadow: 0 2px 8px rgba(0,0,0,.08);
+    --radius: 8px;
+    --sans: 'Inter', -apple-system, sans-serif;
+    --mono: 'Space Mono', monospace;
+  }
+  body { font-family: var(--sans); background: var(--bg); color: var(--ink); min-height: 100vh; }
+
+  /* Layout */
+  .app { max-width: 1400px; margin: 0 auto; padding: 32px 40px; }
+  .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 40px; padding-bottom: 24px; border-bottom: 1px solid var(--border); }
+  .header__left h1 { font-size: 28px; font-weight: 700; letter-spacing: -.02em; }
+  .header__left p { font-size: 13px; color: var(--ink-3); margin-top: 4px; font-family: var(--mono); }
+  .header__right { display: flex; gap: 12px; }
+
+  /* Buttons */
+  .btn { display: inline-flex; align-items: center; gap: 8px; padding: 12px 20px; border-radius: 999px; font-size: 14px; font-weight: 600; cursor: pointer; transition: all .2s; border: none; font-family: var(--sans); }
+  .btn--primary { background: var(--ink); color: #fff; }
+  .btn--primary:hover { background: var(--accent); }
+  .btn--secondary { background: var(--bg-2); color: var(--ink); border: 1px solid var(--border); }
+  .btn--secondary:hover { background: #E5E1DB; }
+  .btn--success { background: var(--success); color: #fff; }
+  .btn--success:hover { background: #247A52; }
+  .btn--danger { background: var(--danger); color: #fff; }
+  .btn--danger:hover { background: #B83D3D; }
+  .btn--sm { padding: 8px 14px; font-size: 12px; }
+  .btn--icon { width: 36px; height: 36px; padding: 0; justify-content: center; border-radius: 50%; }
+
+  /* Section */
+  .section { margin-bottom: 48px; }
+  .section__head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+  .section__title { font-size: 18px; font-weight: 700; display: flex; align-items: center; gap: 12px; }
+  .section__count { font-size: 12px; font-family: var(--mono); color: var(--ink-3); background: var(--bg-2); padding: 4px 10px; border-radius: 999px; }
+  .section__actions { display: flex; gap: 8px; }
+
+  /* Grid */
+  .grid { display: grid; gap: 16px; }
+  .grid--posters { grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); }
+  .grid--videos { grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); }
+
+  /* Card */
+  .card { background: #fff; border-radius: var(--radius); box-shadow: var(--shadow); overflow: hidden; position: relative; transition: transform .2s, box-shadow .2s; }
+  .card:hover { transform: translateY(-2px); box-shadow: 0 4px 16px rgba(0,0,0,.12); }
+  .card--poster .card__thumb { aspect-ratio: 3/4; }
+  .card--poster[data-aspect="wide"] .card__thumb { aspect-ratio: 2.35/1; }
+  .card--poster[data-aspect="square"] .card__thumb { aspect-ratio: 1/1; }
+  .card--video .card__thumb { aspect-ratio: 16/9; }
+  .card__thumb { background: var(--bg-2); position: relative; overflow: hidden; }
+  .card__thumb img { width: 100%; height: 100%; object-fit: cover; }
+  .card__badge { position: absolute; top: 8px; left: 8px; font-size: 10px; font-family: var(--mono); text-transform: uppercase; letter-spacing: .1em; padding: 4px 8px; border-radius: 4px; background: rgba(0,0,0,.6); color: #fff; backdrop-filter: blur(4px); }
+  .card__badge--wide { background: var(--accent); }
+  .card__badge--square { background: var(--success); }
+  .card__badge--main { background: var(--ink); }
+  .card__body { padding: 12px; }
+  .card__label { font-size: 13px; font-weight: 600; margin-bottom: 4px; }
+  .card__meta { font-size: 11px; color: var(--ink-3); font-family: var(--mono); }
+  .card__actions { position: absolute; top: 8px; right: 8px; display: flex; gap: 6px; opacity: 0; transition: opacity .2s; }
+  .card:hover .card__actions { opacity: 1; }
+  .card__action { width: 28px; height: 28px; border-radius: 50%; background: #fff; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 14px; box-shadow: 0 2px 6px rgba(0,0,0,.15); transition: background .2s; }
+  .card__action:hover { background: var(--bg-2); }
+  .card__action--delete:hover { background: #FEE; color: var(--danger); }
+
+  /* Modal */
+  .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.5); backdrop-filter: blur(4px); z-index: 100; display: none; align-items: center; justify-content: center; padding: 20px; }
+  .modal-overlay.is-open { display: flex; }
+  .modal { background: #fff; border-radius: 12px; width: 100%; max-width: 520px; max-height: 90vh; overflow-y: auto; box-shadow: 0 20px 60px rgba(0,0,0,.2); }
+  .modal__head { padding: 20px 24px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+  .modal__title { font-size: 18px; font-weight: 700; }
+  .modal__close { width: 32px; height: 32px; border-radius: 50%; border: none; background: var(--bg-2); cursor: pointer; font-size: 18px; display: flex; align-items: center; justify-content: center; }
+  .modal__close:hover { background: #E5E1DB; }
+  .modal__body { padding: 24px; }
+  .modal__foot { padding: 16px 24px; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 12px; }
+
+  /* Form */
+  .form-group { margin-bottom: 20px; }
+  .form-group:last-child { margin-bottom: 0; }
+  .form-label { display: block; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: .08em; color: var(--ink-2); margin-bottom: 8px; }
+  .form-input { width: 100%; padding: 12px 14px; border: 1px solid var(--border); border-radius: 6px; font-size: 14px; font-family: var(--sans); transition: border-color .2s, box-shadow .2s; }
+  .form-input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(199,91,44,.15); }
+  .form-input::placeholder { color: var(--ink-3); }
+  textarea.form-input { resize: vertical; min-height: 80px; }
+  .form-select { appearance: none; background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%235A5550' stroke-width='2'><path d='M6 9l6 6 6-6'/></svg>"); background-repeat: no-repeat; background-position: right 12px center; padding-right: 36px; }
+  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+
+  /* Preview */
+  .preview { margin-top: 16px; border-radius: 6px; overflow: hidden; background: var(--bg-2); }
+  .preview img { width: 100%; display: block; }
+
+  /* Empty state */
+  .empty { text-align: center; padding: 60px 20px; color: var(--ink-3); }
+  .empty__icon { font-size: 48px; margin-bottom: 16px; opacity: .5; }
+  .empty__text { font-size: 14px; }
+
+  /* Toast */
+  .toast { position: fixed; bottom: 24px; right: 24px; background: var(--ink); color: #fff; padding: 14px 20px; border-radius: 8px; font-size: 14px; font-weight: 500; box-shadow: 0 8px 24px rgba(0,0,0,.2); transform: translateY(100px); opacity: 0; transition: all .3s; z-index: 200; }
+  .toast.is-visible { transform: translateY(0); opacity: 1; }
+  .toast--success { background: var(--success); }
+
+  /* Poster groups */
+  .poster-groups { display: flex; flex-direction: column; gap: 32px; }
+  .poster-group { }
+  .poster-group__head { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
+  .poster-group__label { font-size: 14px; font-weight: 600; color: var(--ink-2); }
+  .poster-group__count { font-size: 11px; font-family: var(--mono); color: var(--ink-3); background: var(--bg-2); padding: 3px 8px; border-radius: 999px; }
+  .poster-group__grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 16px; }
+
+  /* Drag */
+  .card.dragging { opacity: .5; }
+  .card.drag-over { border: 2px dashed var(--accent); }
+
+  /* Responsive */
+  @media (max-width: 768px) {
+    .app { padding: 20px; }
+    .header { flex-direction: column; align-items: flex-start; gap: 16px; }
+    .grid--posters { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); }
+    .grid--videos { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <!-- Header -->
+  <header class="header">
+    <div class="header__left">
+      <h1>Portfolio Admin</h1>
+      <p>管理海报与视频作品 · 双击编辑 · 拖拽排序</p>
+    </div>
+    <div class="header__right">
+      <button class="btn btn--secondary" onclick="importData()">
+        <span>📥</span> 导入 JSON
+      </button>
+      <button class="btn btn--success" onclick="exportData()">
+        <span>📤</span> 导出 JSON
+      </button>
+      <a href="index.html" class="btn btn--primary">
+        <span>👁</span> 预览网站
+      </a>
+    </div>
+  </header>
+
+  <!-- Posters Section -->
+  <section class="section">
+    <div class="section__head">
+      <h2 class="section__title">
+        海报 Posters
+        <span class="section__count" id="posterCount">0</span>
+      </h2>
+      <div class="section__actions">
+        <button class="btn btn--primary btn--sm" onclick="openModal('poster')">
+          <span>+</span> 添加海报
+        </button>
+      </div>
+    </div>
+    <!-- 按比例分组显示 -->
+    <div class="poster-groups" id="posterGroups"></div>
+  </section>
+
+  <!-- Videos Section -->
+  <section class="section">
+    <div class="section__head">
+      <h2 class="section__title">
+        视频 Videos
+        <span class="section__count" id="videoCount">0</span>
+      </h2>
+      <div class="section__actions">
+        <button class="btn btn--primary btn--sm" onclick="openModal('video')">
+          <span>+</span> 添加视频
+        </button>
+      </div>
+    </div>
+    <div class="grid grid--videos" id="videoGrid"></div>
+  </section>
+</div>
+
+<!-- Modal -->
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal">
+    <div class="modal__head">
+      <h3 class="modal__title" id="modalTitle">添加海报</h3>
+      <button class="modal__close" onclick="closeModal()">×</button>
+    </div>
+    <div class="modal__body" id="modalBody"></div>
+    <div class="modal__foot">
+      <button class="btn btn--secondary" onclick="closeModal()">取消</button>
+      <button class="btn btn--primary" id="modalSave" onclick="saveItem()">保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<!-- Hidden file input -->
+<input type="file" id="fileInput" accept=".json" style="display:none" onchange="handleImport(event)">
+
+<script>
+// ============ State ============
+let data = { posters: [], videos: [] };
+let editingType = null;
+let editingId = null;
+
+// ============ Init ============
+async function init() {
+  try {
+    const res = await fetch('data.json?t=' + Date.now());
+    data = await res.json();
+  } catch (e) {
+    console.log('No data.json found, starting fresh');
+    data = { posters: [], videos: [] };
+  }
+  render();
+}
+
+// ============ Render ============
+function render() {
+  renderPosters();
+  renderVideos();
+  document.getElementById('posterCount').textContent = data.posters.length;
+  document.getElementById('videoCount').textContent = data.videos.length;
+}
+
+function renderPosters() {
+  const container = document.getElementById('posterGroups');
+  if (!data.posters.length) {
+    container.innerHTML = `<div class="empty"><div class="empty__icon">🖼</div><div class="empty__text">还没有海报，点击上方按钮添加</div></div>`;
+    return;
+  }
+
+  // 按比例分组：竖版(main) → 宽幅(wide) → 方形(square)
+  const groups = [
+    { key: 'main', label: '竖版 (主网格)', color: 'var(--ink)' },
+    { key: 'wide', label: '宽幅 2.35:1', color: 'var(--accent)' },
+    { key: 'square', label: '方形 1:1', color: 'var(--success)' },
+  ];
+
+  container.innerHTML = groups.map(group => {
+    const items = data.posters.filter(p => p.aspect === group.key);
+    if (!items.length) return '';
+    
+    return `
+      <div class="poster-group">
+        <div class="poster-group__head">
+          <span class="poster-group__label">${group.label}</span>
+          <span class="poster-group__count">${items.length}</span>
+        </div>
+        <div class="poster-group__grid" id="posterGrid-${group.key}">
+          ${items.map((p, i) => `
+            <div class="card card--poster" data-aspect="${p.aspect}" data-id="${p.id}" data-index="${data.posters.findIndex(x => x.id === p.id)}" draggable="true" ondblclick="editItem('poster', '${p.id}')">
+              <div class="card__thumb">
+                <img src="${p.url}" alt="${p.label}" loading="lazy" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect fill=%22%23EDE9E3%22 width=%22100%22 height=%22100%22/><text x=%2250%22 y=%2255%22 text-anchor=%22middle%22 fill=%22%239A9590%22 font-size=%2212%22>无图片</text></svg>'">
+                <span class="card__badge card__badge--${p.aspect}">${getAspectLabel(p.aspect)}</span>
+              </div>
+              <div class="card__body">
+                <div class="card__label">${p.label}</div>
+                <div class="card__meta">${p.id}</div>
+              </div>
+              <div class="card__actions">
+                <button class="card__action" onclick="editItem('poster', '${p.id}')" title="编辑">✏️</button>
+                <button class="card__action card__action--delete" onclick="deleteItem('poster', '${p.id}')" title="删除">🗑</button>
+              </div>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  setupDragDrop('poster');
+}
+
+function renderVideos() {
+  const grid = document.getElementById('videoGrid');
+  if (!data.videos.length) {
+    grid.innerHTML = `<div class="empty"><div class="empty__icon">🎬</div><div class="empty__text">还没有视频，点击上方按钮添加</div></div>`;
+    return;
+  }
+  grid.innerHTML = data.videos.map((v, i) => `
+    <div class="card card--video" data-id="${v.id}" data-index="${i}" draggable="true" ondblclick="editItem('video', '${v.id}')">
+      <div class="card__thumb">
+        <img src="${v.thumb}" alt="${v.title}" loading="lazy" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect fill=%22%23EDE9E3%22 width=%22100%22 height=%22100%22/><text x=%2250%22 y=%2255%22 text-anchor=%22middle%22 fill=%22%239A9590%22 font-size=%2212%22>无图片</text></svg>'">
+        <span class="card__badge">${v.tag}</span>
+      </div>
+      <div class="card__body">
+        <div class="card__label">${v.title}</div>
+        <div class="card__meta">${v.sub} · ${v.duration}</div>
+      </div>
+      <div class="card__actions">
+        <button class="card__action" onclick="editItem('video', '${v.id}')" title="编辑">✏️</button>
+        <button class="card__action card__action--delete" onclick="deleteItem('video', '${v.id}')" title="删除">🗑</button>
+      </div>
+    </div>
+  `).join('');
+  setupDragDrop('video');
+}
+
+function getAspectLabel(aspect) {
+  return { wide: '2.35:1', square: '1:1', main: '竖版' }[aspect] || aspect;
+}
+
+// ============ Modal ============
+function openModal(type, id = null) {
+  editingType = type;
+  editingId = id;
+  const isEdit = !!id;
+  const item = isEdit ? data[type + 's'].find(x => x.id === id) : null;
+
+  document.getElementById('modalTitle').textContent = (isEdit ? '编辑' : '添加') + (type === 'poster' ? '海报' : '视频');
+  document.getElementById('modalBody').innerHTML = type === 'poster' ? getPosterForm(item) : getVideoForm(item);
+  document.getElementById('modalOverlay').classList.add('is-open');
+}
+
+function closeModal() {
+  document.getElementById('modalOverlay').classList.remove('is-open');
+  editingType = null;
+  editingId = null;
+}
+
+function getPosterForm(item) {
+  return `
+    <div class="form-group">
+      <label class="form-label">图片 URL</label>
+      <input type="url" class="form-input" id="formUrl" value="${item?.url || ''}" placeholder="https://example.com/image.jpg" oninput="previewImage(this.value, 'poster')">
+      <div class="preview" id="previewPoster"></div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">标签名称</label>
+      <input type="text" class="form-input" id="formLabel" value="${item?.label || ''}" placeholder="Poster N°01">
+    </div>
+    <div class="form-group">
+      <label class="form-label">比例</label>
+      <select class="form-input form-select" id="formAspect">
+        <option value="main" ${item?.aspect === 'main' ? 'selected' : ''}>竖版 (主网格)</option>
+        <option value="wide" ${item?.aspect === 'wide' ? 'selected' : ''}>宽幅 2.35:1</option>
+        <option value="square" ${item?.aspect === 'square' ? 'selected' : ''}>方形 1:1</option>
+      </select>
+    </div>
+  `;
+}
+
+function getVideoForm(item) {
+  return `
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">标题</label>
+        <input type="text" class="form-input" id="formTitle" value="${item?.title || ''}" placeholder="视频标题">
+      </div>
+      <div class="form-group">
+        <label class="form-label">副标题</label>
+        <input type="text" class="form-input" id="formSub" value="${item?.sub || ''}" placeholder="简短描述">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">类型</label>
+        <select class="form-input form-select" id="formTag">
+          <option value="MG" ${item?.tag === 'MG' ? 'selected' : ''}>MG 动画</option>
+          <option value="3D" ${item?.tag === '3D' ? 'selected' : ''}>3D</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">时长</label>
+        <input type="text" class="form-input" id="formDuration" value="${item?.duration || ''}" placeholder="00:42">
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">封面图 URL</label>
+      <input type="url" class="form-input" id="formThumb" value="${item?.thumb || ''}" placeholder="https://example.com/thumb.jpg" oninput="previewImage(this.value, 'video')">
+      <div class="preview" id="previewVideo"></div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">视频 URL</label>
+      <input type="url" class="form-input" id="formSrc" value="${item?.src || ''}" placeholder="https://example.com/video.mp4">
+    </div>
+  `;
+}
+
+function previewImage(url, type) {
+  const el = document.getElementById('preview' + (type === 'poster' ? 'Poster' : 'Video'));
+  if (url) {
+    el.innerHTML = `<img src="${url}" onerror="this.parentElement.innerHTML='<div style=\\'padding:20px;color:var(--ink-3);font-size:12px;\\'>图片加载失败</div>'">`;
+  } else {
+    el.innerHTML = '';
+  }
+}
+
+// ============ Save / Delete ============
+function saveItem() {
+  if (editingType === 'poster') {
+    const url = document.getElementById('formUrl').value.trim();
+    const label = document.getElementById('formLabel').value.trim() || 'Untitled';
+    const aspect = document.getElementById('formAspect').value;
+
+    if (!url) { toast('请输入图片 URL'); return; }
+
+    if (editingId) {
+      const item = data.posters.find(x => x.id === editingId);
+      if (item) { item.url = url; item.label = label; item.aspect = aspect; }
+    } else {
+      const id = 'p' + String(data.posters.length + 1).padStart(2, '0');
+      data.posters.push({ id, url, label, aspect });
+    }
+  } else {
+    const title = document.getElementById('formTitle').value.trim();
+    const sub = document.getElementById('formSub').value.trim();
+    const tag = document.getElementById('formTag').value;
+    const duration = document.getElementById('formDuration').value.trim();
+    const thumb = document.getElementById('formThumb').value.trim();
+    const src = document.getElementById('formSrc').value.trim();
+
+    if (!title || !thumb) { toast('请填写标题和封面图'); return; }
+
+    if (editingId) {
+      const item = data.videos.find(x => x.id === editingId);
+      if (item) { Object.assign(item, { title, sub, tag, duration, thumb, src }); }
+    } else {
+      const id = 'v' + String(data.videos.length + 1).padStart(2, '0');
+      data.videos.push({ id, title, sub, tag, duration, thumb, src });
+    }
+  }
+
+  closeModal();
+  render();
+  toast('已保存，记得导出 JSON', 'success');
+}
+
+function deleteItem(type, id) {
+  if (!confirm('确定删除这个' + (type === 'poster' ? '海报' : '视频') + '吗？')) return;
+  const arr = data[type + 's'];
+  const idx = arr.findIndex(x => x.id === id);
+  if (idx > -1) arr.splice(idx, 1);
+  render();
+  toast('已删除，记得导出 JSON');
+}
+
+function editItem(type, id) {
+  openModal(type, id);
+}
+
+// ============ Drag & Drop ============
+function setupDragDrop(type) {
+  if (type === 'poster') {
+    // 海报有多个分组，需要处理跨分组拖拽
+    const grids = document.querySelectorAll('[id^="posterGrid-"]');
+    const allCards = document.querySelectorAll('.card--poster');
+    
+    allCards.forEach(card => {
+      card.addEventListener('dragstart', e => {
+        card.classList.add('dragging');
+        e.dataTransfer.setData('text/plain', card.dataset.index);
+      });
+      card.addEventListener('dragend', () => {
+        card.classList.remove('dragging');
+        document.querySelectorAll('.card').forEach(c => c.classList.remove('drag-over'));
+      });
+      card.addEventListener('dragover', e => { e.preventDefault(); card.classList.add('drag-over'); });
+      card.addEventListener('dragleave', () => card.classList.remove('drag-over'));
+      card.addEventListener('drop', e => {
+        e.preventDefault();
+        card.classList.remove('drag-over');
+        const fromIdx = parseInt(e.dataTransfer.getData('text/plain'));
+        const toIdx = parseInt(card.dataset.index);
+        if (fromIdx !== toIdx) {
+          const arr = data.posters;
+          const [item] = arr.splice(fromIdx, 1);
+          arr.splice(toIdx, 0, item);
+          render();
+          toast('顺序已调整，记得导出 JSON');
+        }
+      });
+    });
+  } else {
+    // 视频还是单个网格
+    const grid = document.getElementById('videoGrid');
+    const cards = grid.querySelectorAll('.card');
+
+    cards.forEach(card => {
+      card.addEventListener('dragstart', e => {
+        card.classList.add('dragging');
+        e.dataTransfer.setData('text/plain', card.dataset.index);
+      });
+      card.addEventListener('dragend', () => card.classList.remove('dragging'));
+      card.addEventListener('dragover', e => { e.preventDefault(); card.classList.add('drag-over'); });
+      card.addEventListener('dragleave', () => card.classList.remove('drag-over'));
+      card.addEventListener('drop', e => {
+        e.preventDefault();
+        card.classList.remove('drag-over');
+        const fromIdx = parseInt(e.dataTransfer.getData('text/plain'));
+        const toIdx = parseInt(card.dataset.index);
+        if (fromIdx !== toIdx) {
+          const arr = data.videos;
+          const [item] = arr.splice(fromIdx, 1);
+          arr.splice(toIdx, 0, item);
+          render();
+          toast('顺序已调整，记得导出 JSON');
+        }
+      });
+    });
+  }
+}
+
+// ============ Import / Export ============
+function exportData() {
+  const json = JSON.stringify(data, null, 2);
+  const blob = new Blob([json], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'data.json';
+  a.click();
+  URL.revokeObjectURL(url);
+  toast('已导出 data.json，请替换 portfolio 文件夹中的同名文件', 'success');
+}
+
+function importData() {
+  document.getElementById('fileInput').click();
+}
+
+function handleImport(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = evt => {
+    try {
+      data = JSON.parse(evt.target.result);
+      render();
+      toast('导入成功', 'success');
+    } catch (err) {
+      toast('JSON 格式错误');
+    }
+  };
+  reader.readAsText(file);
+  e.target.value = '';
+}
+
+// ============ Toast ============
+function toast(msg, type = '') {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = 'toast' + (type ? ' toast--' + type : '') + ' is-visible';
+  setTimeout(() => el.classList.remove('is-visible'), 3000);
+}
+
+// ============ Close modal on outside click ============
+document.getElementById('modalOverlay').addEventListener('click', e => {
+  if (e.target.id === 'modalOverlay') closeModal();
+});
+
+// ============ Start ============
+init();
+</script>
+</body>
+</html>
